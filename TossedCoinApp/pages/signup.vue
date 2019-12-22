@@ -4,15 +4,15 @@
     <h1 class="title">新規登録画面</h1>
     <p>
       <label for="name">ユーザ名</label>
-      <input type="text" id="name" v-model="name" />
+      <input type="text" id="name" v-model="name" placeholder="UserName" />
     </p>
     <p>
       <label for="email">メールアドレス</label>
-      <input type="text" id="email" v-model="email" />
+      <input type="text" id="email" v-model="email" placeholder="E-Mail Address" />
     </p>
     <p>
       <label for="password">パスワード</label>
-      <input type="text" id="password" v-model="password" />
+      <input type="text" id="password" v-model="password" placeholder="Password" />
     </p>
     <button @click="signup">新規登録</button>
     <p>
@@ -23,7 +23,6 @@
 
 <script>
 import Logo from "~/components/Logo.vue";
-import firebase from "~/plugins/firebase";
 
 export default {
   components: {
@@ -31,38 +30,21 @@ export default {
   },
   data() {
     return {
-      name: "",
-      email: "",
-      password: "",
-      money: 1000
+      name: this.$store.state.name,
+      email: this.$store.state.email,
+      password: this.$store.state.password,
+      givemoney: 1000 //新規登録時に付与するお金
     };
   },
   methods: {
     //新規登録処理
     signup() {
-      //FirebaseAuthenticationを使ってemailとpasswordで登録します
-      firebase
-        .auth()
-        .createUserWithEmailAndPassword(this.email, this.password)
-        .then(user => {
-          this.$router.push("/dashboard");
-        })
-        .catch(error => {
-          alert(error.message);
-        });
-
-      firebase
-        .firestore()
-        .collection("users")
-        .add({
-          name: this.name,
-          email: this.email,
-          money: this.money
-        });
-
-      this.name = "";
-      this.email = "";
-      this.password = "";
+      this.$store.commit("signup", {
+        name: this.name,
+        email: this.email,
+        password: this.password,
+        givemoney: this.givemoney
+      });
     }
   }
 };
