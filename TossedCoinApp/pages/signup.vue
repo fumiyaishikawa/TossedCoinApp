@@ -23,6 +23,7 @@
 
 <script>
 import Logo from "~/components/Logo.vue";
+import firebase from "~/plugins/firebase";
 
 export default {
   components: {
@@ -31,20 +32,66 @@ export default {
   data() {
     return {
       name: this.$store.state.name,
-      email: this.$store.state.email,
-      password: this.$store.state.password,
+      email: this.email,
+      password: this.password,
       givemoney: 1000 //新規登録時に付与するお金
     };
   },
   methods: {
-    //新規登録処理
+    /*
+     * 新規登録処理
+     * 現状では新規登録できるけど、ログイン状態で新規登録するとuidのアップデートがうまくいかない
+     * 問題：ログインユーザーと新規ユーザーのuidが一緒に更新されてしまう。
+     * 対応：ログイン中は新規登録できないようにすればOK
+     */
     signup() {
-      this.$store.commit("signup", {
-        name: this.name,
-        email: this.email,
-        password: this.password,
-        givemoney: this.givemoney
-      });
+      /*
+       * FirebaseAuthenticationを使ってemailとpasswordで登録
+       * 正常に処理されればダッシュボードに遷移する
+       */
+      firebase
+        .auth()
+        .createUserWithEmailAndPassword(this.email, this.password)
+        .then(user => {
+          this.$router.push("/dashboard");
+        })
+        .catch(error => {
+          alert(error.message);
+        });
+
+      /*
+       * firestoreへのユーザーデータの保存処理
+       * name, savingを保存後に更新処理でuidを保存する
+       * uidはonAuthStateChanged内じゃないと使うことができないが、onAuthStateChangedの中だとthis.nameなどがうまく扱えないので二度手間だけど更新処理を追加している
+       */
+      firebase
+        .firestore()
+        .collection("users")
+        .add({
+          uid: null,
+          username: this.name,
+          saving: this.givemoney
+        })
+        .then(doc => {
+          firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+              // User is signed in.
+              firebase
+                .firestore()
+                .collection("users")
+                .doc(doc.id)
+                .update({
+                  uid: firebase.auth().currentUser.uid
+                });
+            } else {
+              // No user is signed in.
+            }
+          });
+        });
+
+      this.name = "";
+      this.email = "";
+      this.password = "";
     }
   }
 };
