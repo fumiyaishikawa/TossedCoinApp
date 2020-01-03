@@ -10,7 +10,7 @@
       <label for="password">パスワード</label>
       <input type="text" id="password" v-model="password" />
     </p>
-    <button>ログイン</button>
+    <button @click="login">ログイン</button>
     <p>
       <nuxt-link to="/signup">新規登録はこちら</nuxt-link>
     </p>
@@ -19,10 +19,38 @@
 
 <script>
 import Logo from "~/components/Logo.vue";
+import firebase from "~/plugins/firebase";
 
 export default {
   components: {
     Logo
+  },
+  data() {
+    return {
+      email: this.email,
+      password: this.password
+    };
+  },
+  methods: {
+    //ログイン処理
+    login() {
+      //FIrebaseAuthenticationを使ってemailとpasswordで認証
+      firebase
+        .auth()
+        .signInWithEmailAndPassword(this.email, this.password)
+        .then(user => {
+          console.log(user);
+          console.log("ログイン成功");
+          this.$router.push("/dashboard");
+        })
+        .catch(error => {
+          alert(error.message);
+          return;
+        });
+
+      this.email = "";
+      this.password = "";
+    }
   }
 };
 </script>
